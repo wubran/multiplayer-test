@@ -2,7 +2,55 @@ canvascolor = "rgba(19, 23, 26, 1)";
 var canvas = document.getElementById('screen');
 var ctx = canvas.getContext('2d');
 
-players = []
+players = {}
+
+var playername = prompt("Enter your name:");
+var id;
+
+var socket = io();
+
+socket.on('connect', function() {
+    socket.emit('join', playername);
+});
+
+socket.on('player_update', function(playerlist) {
+    players = {};
+    for(let player of playerlist) {
+        if(!players.hasOwnProperty(player[0])) {
+            players[player[0]] = new Player(player[1]);
+        }
+        if(player[1]==playername) {
+            id = player[0];
+        }
+    }
+    console.log(playerlist)
+});
+
+socket.on("new_movement", function(n) {
+    reverse_vmap = {3:-1, 0:0, 1:1};
+    data = BigInt(n)
+    op_id = parseInt(data >> 42n);
+    data -= BigInt(op_id) << 42n;
+    usr_id = parseInt(data >> 36n);
+    data -= BigInt(usr_id) << 36n;
+    timestamp = parseInt(data >> 22n);
+    data -= BigInt(timestamp) << 22n;
+    posx = parseInt(data >> 13n);
+    data -= BigInt(posx) << 13n;
+    posy = parseInt(data >> 4n);
+    data -= BigInt(posy) << 4n;
+    vx = reverse_vmap[parseInt(data >> 2n)];
+    data -= (data >> 2n) << 2n;
+    vy = parseInt(reverse_vmap[data]);
+    if(usr_id!=id){
+        // console.log(op_id, usr_id, timestamp, posx, posy, vx, vy);
+        let target = players[usr_id];
+        target.x = posx;
+        target.y = posy;
+        target.vx = vx;
+        target.vy = vy;
+    }
+});
 
 var click = false
 var mouseX = 0;
@@ -14,23 +62,13 @@ var frameTime = 16;
 
 canvasResize();
 
-
-// canvas.addEventListener('mousedown', onClick);
-// canvas.addEventListener("mouseup", onRelease);
-// canvas.addEventListener("wheel", scroll)
-// canvas.addEventListener('mouseleave', onMouseLeave);
-// canvas.addEventListener('mousemove', onMouseMove);
-// const keyDict = {
-//     w: [0,-1],
-//     a: [-1,0],
-//     s: [0,1],
-//     d: [1,0]
-// };
 const keyList = ["w","a","s","d"]
 document.addEventListener('keydown', (event) => {
     const keyName = event.key;
-    if(keyList.includes(keyName)){
-        players[0].keysPressed[keyList.indexOf(keyName)] = true;
+    if(keyList.includes(keyName) && !players[id].keysPressed[keyList.indexOf(keyName)]){
+        players[id].keysPressed[keyList.indexOf(keyName)] = true;
+        players[id].calc()
+        sendMovePacket();
     }
     switch(keyName){
         case 'Control':
@@ -53,9 +91,35 @@ document.addEventListener('keydown', (event) => {
 document.addEventListener('keyup', (event) => {
     const keyName = event.key;
     if(keyList.includes(keyName)){
-        players[0].keysPressed[keyList.indexOf(keyName)] = false;
+        players[id].keysPressed[keyList.indexOf(keyName)] = false;
+        players[id].calc()
+        sendMovePacket();
     }
 }, false);
+
+function b(dec) {
+    return (dec >>> 0).toString(2);
+}
+
+function sendMovePacket() {
+    vmap = {0:0, 1:1};
+    vmap[-1] = 3
+    op_id = BigInt(1) << BigInt(42); // movement
+    usr_id = BigInt(id) << BigInt(36);
+    timesimple = BigInt(Math.floor(Date.now()/10)%10000) << BigInt(22);
+    posx = BigInt(Math.floor(players[id].x)) << BigInt(13);
+    posy = BigInt(Math.floor(players[id].y)) << BigInt(4);
+    vx = BigInt(vmap[players[id].vx]) << BigInt(2);
+    vy = BigInt(vmap[players[id].vy]);
+    let binNum = op_id + usr_id + timesimple + posx + posy + vx + vy;
+    socket.emit("movement", parseInt(binNum));
+}
+
+window.onbeforeunload = closingCode;
+function closingCode(){
+   socket.emit("dc", id);
+   return null;
+}
 
 function onClick(event){
     click = true;
@@ -103,8 +167,8 @@ class Player{
         // }
     }
     update(){
-        this.x += this.speedfac * this.vx * frameTime/16;
-        this.y += this.speedfac * this.vy * frameTime/16;
+        this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
+        this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
     }
     draw(){
         ctx.lineWidth = 2;
@@ -121,8 +185,6 @@ class Player{
     }
 }
 
-players.push(new Player("bruh"));
-players.push(new Player("gruh", 200, 200));
 
 
 function fillscreen(){
@@ -130,8 +192,6 @@ function fillscreen(){
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.font = canvas.width / 30 + "px Arial";
     ctx.fillStyle = "rgba(255, 245, 80, 1)";
-    strplayers = players.length.toString();
-    ctx.fillText(players.length, canvas.width - canvas.width*strplayers.length/54 - canvas.width/40, canvas.width / 28);
 }
 
 oldTime = 0;
@@ -141,14 +201,11 @@ function loop(timestamp){
     oldTime = timestamp;
 
     fillscreen();
-    for(player of players){
-        player.draw();
+    for(player in players){
+        players[player].draw();
     }
-    for(player of players){
-        player.calc();
-    }
-    for(player of players){
-        player.update();
+    for(player in players){
+        players[player].update();
     }
     
     requestAnimationFrame(loop);
