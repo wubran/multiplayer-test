@@ -66,4 +66,4 @@ def mov(data):
 
 if __name__ == '__main__':
     print("Starting...")
-    socketio.run(app, port=8080, host="0.0.0.0")
+    socketio.run(app, port=80, host="0.0.0.0")
