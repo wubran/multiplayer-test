@@ -59,6 +59,8 @@ var mousemode = 0;
 var pause = false;
 
 var frameTime = 16;
+var ping = "U-0ms D-0ms T-0ms";
+var lastPingSent;
 
 canvasResize();
 
@@ -100,6 +102,20 @@ document.addEventListener('keyup', (event) => {
 function b(dec) {
     return (dec >>> 0).toString(2);
 }
+
+function sendPing() {
+    lastPingSent = Date.now();
+    socket.emit("ping");
+    console.log("pinging");
+}
+socket.on("pong", (receivedTime) => {
+    let now = Date.now();
+    let up = receivedTime - lastPingSent;
+    let down = now - receivedTime;
+    let total = now - lastPingSent;
+    ping = `U-${up}ms D-${down}ms T-${total}ms`;
+    console.log("ponged");
+});
 
 function sendMovePacket() {
     vmap = {0:0, 1:1};
@@ -192,9 +208,12 @@ function fillscreen(){
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.font = canvas.width / 30 + "px Arial";
     ctx.fillStyle = "rgba(255, 245, 80, 1)";
+    p = ping.toString();
+    ctx.fillText(p, canvas.width - canvas.width*p.length/54 - canvas.width/40, canvas.width / 28);
 }
 
 oldTime = 0;
+frameIter = 0
 function loop(timestamp){
     frameTime = timestamp - oldTime;
     // console.log(frameTime);
@@ -207,7 +226,10 @@ function loop(timestamp){
     for(player in players){
         players[player].update();
     }
-    
+    if(frameIter == 0) {
+        sendPing();
+    }
+    frameIter = (frameIter + 1) % 120
     requestAnimationFrame(loop);
 }
 
