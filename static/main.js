@@ -114,7 +114,7 @@ socket.on("pong", (receivedTime) => {
     let down = now - receivedTime;
     let total = now - lastPingSent;
     ping = `U-${up}ms D-${down}ms T-${total}ms`;
-    console.log("ponged");
+    console.log("ponged", lastPingSent, receivedTime, now);
 });
 
 function sendMovePacket() {
