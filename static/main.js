@@ -79,7 +79,7 @@ socket.on("bullet_fired", (d) => {
 })
 
 socket.on("hit_report", (d) => {
-    players[d[0]].hitTimer = 60;
+    players[d[0]].hitTimer = 30;
 });
 
 var click = false
@@ -249,7 +249,7 @@ class Player{
     update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
-        if(this.hitTimer <= 0 && this.id == id){
+        if(this.id == id){
             this.getShot(i);
         }
     }
@@ -275,9 +275,13 @@ class Player{
                 continue;
             }
             if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < playerRadius + bullet.r){
-                this.hitTimer = 60;
-                this.health -= bullet.life/10 + 5;
-                socket.emit("got_hit", [id, bullet.life/10 + 5, bullet.id, timeNow()]);
+                bullet.life = 0;
+                this.health -= bullet.life/18 + 2;
+                if(this.health < 0){
+                    console.log("teky is die L massive bad")
+                }
+                this.health = Math.floor(this.health);
+                socket.emit("got_hit", [id, this.health, bullet.id, timeNow()]);
                 return;
             }
         }
@@ -290,8 +294,8 @@ class Player{
         ctx.arc(this.x, this.y, playerRadius, 0, 2 * Math.PI);
         ctx.stroke();
         if(this.hitTimer > 0){
-            this.hitTimer -= frameTime/16.666;
-            ctx.fillStyle = "rgba(255,255,255,"+ (this.hitTimer/180) +")";
+            this.hitTimer -= 4*frameTime/16.666;
+            ctx.fillStyle = "rgba(255,255,255,"+ (this.hitTimer/100) +")";
             ctx.fill()
         }
 
