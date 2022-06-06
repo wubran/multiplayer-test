@@ -199,10 +199,10 @@ class Player{
         //     this.vx = Math.sign(Math.vy) * 5;
         // }
     }
-    update(){
+    update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
-        this.getShot();
+        this.getShot(i);
     }
     updateDir(){
         let dx = mouseX - this.x;
@@ -212,9 +212,9 @@ class Player{
         this.ny = dy/mag;
         // console.log(this.nx, this.ny);
     }
-    getShot(){
+    getShot(i){
         for(let bullet of bullets){
-            if(bullet.id = id){
+            if(bullet.id == i){
                 continue;
             }
             if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < 20 + bullet.r){
@@ -306,7 +306,7 @@ function loop(timestamp){
         players[player].draw();
     }
     for(player in players){
-        players[player].update();
+        players[player].update(player);
     }
     for(bullet in bullets){
         bullets[bullet].draw();
