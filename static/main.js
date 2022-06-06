@@ -91,7 +91,10 @@ document.addEventListener('mouseleave', onMouseLeave);
 
 const keyList = ["w","a","s","d"]
 document.addEventListener('keydown', (event) => {
-    const keyName = event.key;
+    let keyName = event.key;
+    if(keyName.length == 1){
+        keyName = keyName.toLowerCase();
+    }
     if(keyList.includes(keyName) && !players[id].keysPressed[keyList.indexOf(keyName)]){
         players[id].keysPressed[keyList.indexOf(keyName)] = true;
         players[id].calc()
@@ -116,11 +119,18 @@ document.addEventListener('keydown', (event) => {
 }, false);
 
 document.addEventListener('keyup', (event) => {
-    const keyName = event.key;
+    let keyName = event.key;
+    if(keyName.length == 1){
+        keyName = keyName.toLowerCase();
+    }
     if(keyList.includes(keyName)){
         players[id].keysPressed[keyList.indexOf(keyName)] = false;
         players[id].calc()
         sendMovePacket();
+        return;
+    }
+    if(keyName == " "){
+        onRelease();
     }
 }, false);
 
@@ -283,12 +293,11 @@ class Bullet{
         this.life = 60;
         this.r = this.life/16+1;
         this.id = id;
+
     }
     update(i){
-        this.x = (((this.x+(this.vx * frameTime/2))%500)+500)%500;
-        this.y = (((this.y+(this.vy * frameTime/2))%500)+500)%500;
-        this.vx*=0.97;
-        this.vy*=0.97;    
+        this.x = (((this.x+(  (this.vx*(this.life+20)/80)   * frameTime/2))%500)+500)%500;
+        this.y = (((this.y+(  (this.vy*(this.life+20)/80)  * frameTime/2))%500)+500)%500;
         this.life-=frameTime/16.666;
         this.r = this.life/16+1;
         if(this.life <= 0){
@@ -346,7 +355,7 @@ function loop(timestamp){
     frameIter = (frameIter + 1)
     requestAnimationFrame(loop);
     if(waitShoot > 0){
-        waitShoot--;
+        waitShoot-=frameTime/16.667;
     }else{
         if(click){
             shoot();
