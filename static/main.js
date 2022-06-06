@@ -67,8 +67,8 @@ socket.on("new_movement", function(n) {
 
 socket.on("heading_update", (d) => {
     if(d[0] != id && players.hasOwnProperty(d[0])) {
-        players[d[0]].nx = d[1];
-        players[d[0]].ny = d[2];
+        players[d[0]].targetNx = d[1];
+        players[d[0]].targetNy = d[2];
     }
 });
 
@@ -218,6 +218,8 @@ class Player{
         this.speedfac = 5;
         this.nx = 0;
         this.ny = 0;
+        this.targetNx = 0;
+        this.targetNy = 0;
         this.updateDir();
         
         this.hit = false;
@@ -253,6 +255,14 @@ class Player{
         this.nx = dx/mag;
         this.ny = dy/mag;
         // console.log(this.nx, this.ny);
+    }
+    alignToTarget() {
+        this.nx += (this.targetNx - this.nx)/1.75;
+        this.ny += (this.targetNy - this.ny)/1.75;
+
+        let mult = 1/Math.sqrt(this.nx*this.nx+this.ny*this.ny);
+        this.nx *= mult;
+        this.ny *= mult;
     }
     getShot(i){
         for(let bullet of bullets){
@@ -354,6 +364,9 @@ function loop(timestamp){
     }
     for(player in players){
         players[player].update(player);
+        if(player != id) {
+            players[player].alignToTarget();
+        }
     }
     if(!(typeof players[id] === 'undefined')){
         players[id].updateDir();
