@@ -23,7 +23,7 @@ def index():
 
 @socketio.on('join')
 def on_join(name):
-    players.append([playerIdIter[0], name, request.sid])
+    players.append([playerIdIter[0], name, request.sid, 100])
     playerIdIter[0] = (playerIdIter[0] + 1)%64
     print(f"Player Joined: {name}")
     emit("player_update", players, broadcast=True)
@@ -44,22 +44,6 @@ def disconnect():
 @socketio.on("movement")
 def mov(data):
     emit("new_movement", data, broadcast = True)
-    # reverse_vmap = {3:-1, 0:0, 1:1}
-    # # print(data, bin(data))
-    # op_id = data >> 42
-    # data -= op_id << 42
-    # usr_id = data >> 36
-    # data -= usr_id << 36
-    # timestamp = data >> 22
-    # data -= timestamp << 22
-    # posx = data >> 13
-    # data -= posx << 13
-    # posy = data >> 4
-    # data -= posy << 4
-    # vx = reverse_vmap[data >> 2]
-    # data -= (data >> 2) << 2
-    # vy = reverse_vmap[data]
-    # print(op_id, usr_id, timestamp, posx, posy, vx, vy)
 
 @socketio.on("heading")
 def heading(d):
@@ -73,6 +57,9 @@ def bullet(d):
 @socketio.on("got_hit")
 def gothit(id):
     emit("hit_report", id, broadcast = True)
+    for i,player in enumerate(players):
+        if player[0] == id[0]:
+            players[i][3] = id[0]
 
 
 if __name__ == '__main__':
