@@ -60,8 +60,7 @@ def mov(data):
     # data -= (data >> 2) << 2
     # vy = reverse_vmap[data]
     # print(op_id, usr_id, timestamp, posx, posy, vx, vy)
-    
-    
+
 
 
 if __name__ == '__main__':
