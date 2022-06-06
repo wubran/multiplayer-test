@@ -87,6 +87,7 @@ var mouseX = 0;
 var mouseY = 0;
 var mousemode = 0;
 var pause = false;
+const playerRadius = 14;
 
 var frameTime = 16;
 var ping = "U:0ms D:0ms T:0ms";
@@ -218,7 +219,7 @@ class Player{
         this.name = name;
         this.id = id;
         let seed = 2*Math.PI*Math.random();
-        this.color = "rgba("+(75*Math.sin(seed)+180)+","+(75*Math.sin(seed + 2*Math.PI/3)+180)+","+(75*Math.sin(seed + 4*Math.PI/3)+180)+",1)";
+        this.color = "rgba("+(75*Math.sin(seed)+180)+","+(75*Math.sin(seed + 2*Math.PI/3)+180)+","+(75*Math.sin(seed + 4*Math.PI/3)+180);
         this.speedfac = 5;
         this.nx = 0;
         this.ny = 0;
@@ -227,6 +228,7 @@ class Player{
         this.updateDir();
         
         this.hitTimer = 120;
+        this.health = 100;
     }
     calc(){
         this.vx = 0;
@@ -272,19 +274,20 @@ class Player{
             if(bullet.id == i){
                 continue;
             }
-            if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < 20 + bullet.r){
+            if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < playerRadius + bullet.r){
                 this.hitTimer = 60;
-                socket.emit("got_hit", [id, timeNow()]);
+                this.health -= bullet.life/10 + 5;
+                socket.emit("got_hit", [id, bullet.life/10 + 5, bullet.id, timeNow()]);
                 return;
             }
         }
     }
     draw(){
         ctx.lineWidth = 2;
-        ctx.strokeStyle = this.color;
+        ctx.strokeStyle = this.color + ",1)";
         
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 20, 0, 2 * Math.PI);
+        ctx.arc(this.x, this.y, playerRadius, 0, 2 * Math.PI);
         ctx.stroke();
         if(this.hitTimer > 0){
             this.hitTimer -= frameTime/16.666;
@@ -298,7 +301,18 @@ class Player{
 
         ctx.beginPath();
         ctx.moveTo(this.x,this.y);
-        ctx.lineTo(this.x + 20*this.nx, this.y + 20*this.ny);
+        ctx.lineTo(this.x + playerRadius*this.nx, this.y + playerRadius*this.ny);
+        ctx.stroke();
+
+        ctx.lineWidth = 6;
+        // ctx.strokeStyle = "rgba("+ (255 - 2*this.life) +","+ (55 + 2*this.life) +",0,1)";
+        ctx.strokeStyle = this.color + ",0.4)"
+        ctx.beginPath();
+        let angle = Math.atan(this.ny/this.nx)-Math.PI;
+        if(this.nx < 0){
+            angle += Math.PI;
+        }
+        ctx.arc(this.x, this.y, playerRadius+3, angle-(Math.PI*this.health/100), angle+(Math.PI*this.health/100));
         ctx.stroke();
     }
 }
