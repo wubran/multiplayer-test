@@ -25,7 +25,7 @@ socket.on('player_update', function(playerlist) {
     for(let player of playerlist) {
         existingIds.push(player[0]);
         if(!players.hasOwnProperty(player[0])) {
-            players[player[0]] = new Player(player[1]);
+            players[player[0]] = new Player(player[0], player[1]);
         }
         if(player[1]==playername) {
             id = player[0];
@@ -62,6 +62,13 @@ socket.on("new_movement", function(n) {
         target.y = posy;
         target.vx = vx;
         target.vy = vy;
+    }
+});
+
+socket.on("heading_update", (d) => {
+    if(d[0] != id && players.hasOwnProperty(d[0])) {
+        players[d[0]].nx = d[1];
+        players[d[0]].ny = d[2];
     }
 });
 
@@ -182,13 +189,14 @@ function onMouseLeave(event){
 }
 let keyDirections = [[0,-1],[-1,0],[0,1],[1,0]]; //wasd
 class Player{
-    constructor(name, x = canvas.width/2, y = canvas.height/2){
+    constructor(id, name, x = canvas.width/2, y = canvas.height/2){
         this.x = x;
         this.y = y;
         this.vy = 0;
         this.vx = 0;
         this.keysPressed = [false,false,false,false]; //wasd
         this.name = name;
+        this.id = id;
         let seed = 2*Math.PI*Math.random();
         this.color = "rgba("+(75*Math.sin(seed)+180)+","+(75*Math.sin(seed + 2*Math.PI/3)+180)+","+(75*Math.sin(seed + 4*Math.PI/3)+180)+",1)";
         this.speedfac = 5;
@@ -217,9 +225,6 @@ class Player{
     update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
-        // if(!(typeof players[id] === 'undefined')){
-            players[id].updateDir();
-        // }
         this.getShot(i);
     }
     updateDir(){
@@ -313,10 +318,10 @@ function fillscreen(){
 }
 
 oldTime = 0;
-frameIter = 0
+frameIter = 1;
+
 function loop(timestamp){
     frameTime = timestamp - oldTime;
-    // console.log(frameTime);
     oldTime = timestamp;
 
     fillscreen();
@@ -326,6 +331,9 @@ function loop(timestamp){
     for(player in players){
         players[player].update(player);
     }
+    if(!(typeof players[id] === 'undefined')){
+        players[id].updateDir();
+    }
     for(bullet in bullets){
         bullets[bullet].draw();
     }
@@ -334,10 +342,8 @@ function loop(timestamp){
             bullet--;
         }
     }
-    if(frameIter == 0) {
-        sendPing();
-    }
-    frameIter = (frameIter + 1) % 120
+    
+    frameIter = (frameIter + 1)
     requestAnimationFrame(loop);
     if(waitShoot > 0){
         waitShoot--;
@@ -350,6 +356,18 @@ function loop(timestamp){
 
 requestAnimationFrame(loop)
 
+let intervals = 0;
+// let lastNx = 1;
+// let lastNy = 0;
+setInterval(() => {
+    if(intervals % 20 == 0) {
+        sendPing();
+    }
+    if(intervals % 2 == 0 && id > -1) {
+        socket.emit("heading", [id, players[id].nx, players[id].ny]);
+    }
+    intervals++;
+}, 50);
 
 window.onresize = canvasResize;
 function canvasResize() {

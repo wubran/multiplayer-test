@@ -61,6 +61,10 @@ def mov(data):
     # vy = reverse_vmap[data]
     # print(op_id, usr_id, timestamp, posx, posy, vx, vy)
 
+@socketio.on("heading")
+def heading(d):
+    # print(d)
+    emit("heading_update", d, broadcast = True)
 
 
 if __name__ == '__main__':
