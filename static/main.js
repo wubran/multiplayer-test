@@ -14,8 +14,11 @@ socket.on('connect', function() {
 });
 
 socket.on('player_update', function(playerlist) {
-    players = {};
+    // players = {};
+    
+    let existingIds = [];
     for(let player of playerlist) {
+        existingIds.push(player[0]);
         if(!players.hasOwnProperty(player[0])) {
             players[player[0]] = new Player(player[1]);
         }
@@ -23,7 +26,12 @@ socket.on('player_update', function(playerlist) {
             id = player[0];
         }
     }
-    console.log(playerlist)
+    for(let p in players) {
+        if(!existingIds.includes(parseInt(p))) {
+            delete players[parseInt(p)];
+        }
+    }
+    sendMovePacket();
 });
 
 socket.on("new_movement", function(n) {
@@ -59,7 +67,7 @@ var mousemode = 0;
 var pause = false;
 
 var frameTime = 16;
-var ping = "U-0ms D-0ms T-0ms";
+var ping = "U:0ms D:0ms T:0ms";
 var lastPingSent;
 
 canvasResize();
@@ -106,15 +114,13 @@ function b(dec) {
 function sendPing() {
     lastPingSent = Date.now();
     socket.emit("ping");
-    console.log("pinging");
 }
 socket.on("pong", (receivedTime) => {
     let now = Date.now();
     let up = receivedTime - lastPingSent;
     let down = now - receivedTime;
     let total = now - lastPingSent;
-    ping = `U-${up}ms D-${down}ms T-${total}ms`;
-    console.log("ponged", lastPingSent, receivedTime, now);
+    ping = `U:${up}ms D:${down}ms T:${total}ms`;
 });
 
 function sendMovePacket() {
