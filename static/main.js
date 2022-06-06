@@ -215,6 +215,7 @@ class Player{
         this.updateDir();
         
         this.hit = false;
+        this.hitTimer = 120;
     }
     calc(){
         this.vx = 0;
@@ -235,7 +236,9 @@ class Player{
     update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
-        this.getShot(i);
+        if(this.hitTimer <= 0){
+            this.getShot(i);
+        }
     }
     updateDir(){
         let dx = mouseX - this.x;
@@ -251,7 +254,7 @@ class Player{
                 continue;
             }
             if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < 20 + bullet.r){
-                this.hit = true;
+                this.hitTimer = 90;
                 return;
             }
         }
@@ -263,8 +266,9 @@ class Player{
         ctx.beginPath();
         ctx.arc(this.x, this.y, 20, 0, 2 * Math.PI);
         ctx.stroke();
-        if(this.hit){
-            ctx.fillStyle = "white";
+        if(this.hitTimer > 0){
+            this.hitTimer -= frameTime/16.666;
+            ctx.fillStyle = "rgba(255,255,255,"+ (this.hitTimer/180) +")";
             ctx.fill()
         }
 
