@@ -9,6 +9,10 @@ var id;
 
 var socket = io();
 
+var timeOffset = 0;
+var timeOffsetPrecision = 99999;
+
+
 socket.on('connect', function() {
     socket.emit('join', playername);
 });
@@ -107,6 +111,10 @@ document.addEventListener('keyup', (event) => {
     }
 }, false);
 
+function timeNow() {
+    return Math.round(Date.now() + timeOffset);
+}
+
 function b(dec) {
     return (dec >>> 0).toString(2);
 }
@@ -117,10 +125,14 @@ function sendPing() {
 }
 socket.on("pong", (receivedTime) => {
     let now = Date.now();
-    let up = receivedTime - lastPingSent;
-    let down = now - receivedTime;
+    let up = receivedTime - (lastPingSent+timeOffset);
+    let down = (now+timeOffset) - receivedTime;
     let total = now - lastPingSent;
     ping = `U:${up}ms D:${down}ms T:${total}ms`;
+    if(total/2 < timeOffsetPrecision) {
+        timeOffsetPrecision = total/2;
+        timeOffset = receivedTime - (lastPingSent + total/2);
+    }
 });
 
 function sendMovePacket() {
@@ -128,7 +140,7 @@ function sendMovePacket() {
     vmap[-1] = 3
     op_id = BigInt(1) << BigInt(42); // movement
     usr_id = BigInt(id) << BigInt(36);
-    timesimple = BigInt(Math.floor(Date.now()/10)%10000) << BigInt(22);
+    timesimple = BigInt(Math.floor(timeNow()/10)%10000) << BigInt(22);
     posx = BigInt(Math.floor(players[id].x)) << BigInt(13);
     posy = BigInt(Math.floor(players[id].y)) << BigInt(4);
     vx = BigInt(vmap[players[id].vx]) << BigInt(2);
