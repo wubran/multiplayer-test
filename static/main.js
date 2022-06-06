@@ -6,6 +6,7 @@ players = {}
 
 var playername = prompt("Enter your name:");
 var id;
+var waitShoot = 0;
 
 var socket = io();
 
@@ -75,6 +76,11 @@ var ping = "U:0ms D:0ms T:0ms";
 var lastPingSent;
 
 canvasResize();
+
+document.addEventListener('mousemove', onMouseMove);
+document.addEventListener('mousedown', onClick);
+document.addEventListener("mouseup", onRelease);
+document.addEventListener('mouseleave', onMouseLeave);
 
 const keyList = ["w","a","s","d"]
 document.addEventListener('keydown', (event) => {
@@ -156,6 +162,9 @@ function closingCode(){
 }
 
 function onClick(event){
+    if(waitShoot == 0){
+        shoot();
+    }
     click = true;
 }
 
@@ -164,8 +173,11 @@ function onRelease(event){
 }
 
 function onMouseMove(event){
-    mouseX = event.pageX;
-    mouseY = event.pageY;
+    mouseX = event.pageX-(window.innerWidth-500)/2;
+    mouseY = event.pageY-(window.innerHeight-500)/2;
+    if(!(typeof players[id] === 'undefined')){
+        players[id].updateDir();
+    }
 }
 
 function onMouseLeave(event){
@@ -183,6 +195,11 @@ class Player{
         let seed = 2*Math.PI*Math.random();
         this.color = "rgba("+(75*Math.sin(seed)+180)+","+(75*Math.sin(seed + 2*Math.PI/3)+180)+","+(75*Math.sin(seed + 4*Math.PI/3)+180)+",1)";
         this.speedfac = 5;
+        this.nx = 0;
+        this.ny = 0;
+        this.updateDir();
+        
+        this.hit = false;
     }
     calc(){
         this.vx = 0;
@@ -200,22 +217,87 @@ class Player{
         //     this.vx = Math.sign(Math.vy) * 5;
         // }
     }
-    update(){
+    update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
+        this.getShot(i);
+    }
+    updateDir(){
+        let dx = mouseX - this.x;
+        let dy = mouseY - this.y;
+        let mag = Math.sqrt(dx*dx + dy*dy);
+        this.nx = dx/mag;
+        this.ny = dy/mag;
+        // console.log(this.nx, this.ny);
+    }
+    getShot(i){
+        for(let bullet of bullets){
+            if(bullet.id == i){
+                continue;
+            }
+            if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < 20 + bullet.r){
+                this.hit = true;
+                return;
+            }
+        }
     }
     draw(){
         ctx.lineWidth = 2;
         ctx.strokeStyle = this.color;
-        // ctx.fillStyle = "black"//this.color.slice(0,-2)+"0.3)";
+        
         ctx.beginPath();
         ctx.arc(this.x, this.y, 20, 0, 2 * Math.PI);
         ctx.stroke();
+        if(this.hit){
+            ctx.fillStyle = "white";
+            ctx.fill()
+        }
 
         ctx.fillStyle = "rgba(255, 255, 255, 1)";
         ctx.font = 16 + "px Arial";
         ctx.fillText(this.name, this.x-10, this.y+32);
 
+        ctx.beginPath();
+        ctx.moveTo(this.x,this.y);
+        ctx.lineTo(this.x + 20*this.nx, this.y + 20*this.ny);
+        ctx.stroke();
+    }
+}
+function shoot(){
+    bullets.push(new Bullet(players[id].x, players[id].y, players[id].nx, players[id].ny, players[id].color));
+    waitShoot = 20;
+}
+let bullets = [];
+class Bullet{
+    constructor(startX,startY,nx,ny,color){
+        this.x = startX;
+        this.y = startY;
+        this.vx = nx;
+        this.vy = ny;
+        this.color = color;
+        this.life = 60;
+        this.r = this.life/16+1;
+        this.id = id;
+    }
+    update(i){
+        this.x = (((this.x+(this.vx * frameTime/2))%500)+500)%500;
+        this.y = (((this.y+(this.vy * frameTime/2))%500)+500)%500;
+        this.vx*=0.97;
+        this.vy*=0.97;    
+        this.life-=1;
+        this.r = this.life/16+1;
+        if(this.life == 0){
+            bullets.splice(i,i+1);
+            return true;
+        }
+        return false;
+    }
+    draw(){
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        ctx.stroke();
     }
 }
 
@@ -242,13 +324,28 @@ function loop(timestamp){
         players[player].draw();
     }
     for(player in players){
-        players[player].update();
+        players[player].update(player);
     }
+    for(bullet in bullets){
+        bullets[bullet].draw();
+    }
+    for(let bullet = 0; bullet < bullets.length; bullet++){
+        if(bullets[bullet].update(bullet)){
+            bullet--;
+        }
+    }    
     if(frameIter == 0) {
         sendPing();
     }
     frameIter = (frameIter + 1) % 120
     requestAnimationFrame(loop);
+    if(waitShoot > 0){
+        waitShoot--;
+    }else{
+        if(click){
+            shoot();
+        }
+    }
 }
 
 requestAnimationFrame(loop)
