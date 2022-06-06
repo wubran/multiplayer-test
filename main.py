@@ -12,7 +12,7 @@ with open("secrets.json") as f:
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets["secret"]
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 playerIdIter = [0,]
 players = []
