@@ -296,8 +296,8 @@ class Bullet{
 
     }
     update(i){
-        this.x = (((this.x+(  (this.vx*(this.life+20)/80)   * frameTime/2))%500)+500)%500;
-        this.y = (((this.y+(  (this.vy*(this.life+20)/80)  * frameTime/2))%500)+500)%500;
+        this.x = (((this.x+(  (this.vx*(this.life)/60)   * frameTime/2))%500)+500)%500;
+        this.y = (((this.y+(  (this.vy*(this.life)/60)  * frameTime/2))%500)+500)%500;
         this.life-=frameTime/16.666;
         this.r = this.life/16+1;
         if(this.life <= 0){
