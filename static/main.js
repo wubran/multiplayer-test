@@ -103,7 +103,7 @@ document.addEventListener('keydown', (event) => {
 
             return;
         case ' ':
-            pause = !pause;
+            onClick();
             return;
     }
 }, false);
@@ -175,9 +175,6 @@ function onRelease(event){
 function onMouseMove(event){
     mouseX = event.pageX-(window.innerWidth-500)/2;
     mouseY = event.pageY-(window.innerHeight-500)/2;
-    if(!(typeof players[id] === 'undefined')){
-        players[id].updateDir();
-    }
 }
 
 function onMouseLeave(event){
@@ -220,6 +217,9 @@ class Player{
     update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
+        // if(!(typeof players[id] === 'undefined')){
+            players[id].updateDir();
+        // }
         this.getShot(i);
     }
     updateDir(){
@@ -284,9 +284,9 @@ class Bullet{
         this.y = (((this.y+(this.vy * frameTime/2))%500)+500)%500;
         this.vx*=0.97;
         this.vy*=0.97;    
-        this.life-=1;
+        this.life-=frameTime/16.666;
         this.r = this.life/16+1;
-        if(this.life == 0){
+        if(this.life <= 0){
             bullets.splice(i,i+1);
             return true;
         }
@@ -333,7 +333,7 @@ function loop(timestamp){
         if(bullets[bullet].update(bullet)){
             bullet--;
         }
-    }    
+    }
     if(frameIter == 0) {
         sendPing();
     }
