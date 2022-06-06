@@ -66,6 +66,10 @@ def heading(d):
     # print(d)
     emit("heading_update", d, broadcast = True)
 
+@socketio.on("fire_bullet")
+def bullet(d):
+    emit("bullet_fired", d, broadcast = True)
+
 
 if __name__ == '__main__':
     print("Starting...")

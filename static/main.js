@@ -72,6 +72,12 @@ socket.on("heading_update", (d) => {
     }
 });
 
+socket.on("bullet_fired", (d) => {
+    if(d[0] != id && players.hasOwnProperty(d[0])) {
+        bullets.push(new Bullet(d[1], d[2], d[3], d[4], d[5], d[0]));
+    }
+})
+
 var click = false
 var mouseX = 0;
 var mouseY = 0;
@@ -283,25 +289,30 @@ class Player{
     }
 }
 function shoot(){
-    bullets.push(new Bullet(players[id].x, players[id].y, players[id].nx, players[id].ny, players[id].color));
-    waitShoot = 20;
+    bullets.push(new Bullet(players[id].x, players[id].y, players[id].nx, players[id].ny, timeNow(), id));
+    socket.emit("fire_bullet", [id, players[id].x, players[id].y, players[id].nx, players[id].ny, timeNow()]);
+    waitShoot = 18;
 }
 let bullets = [];
 class Bullet{
-    constructor(startX,startY,nx,ny,color){
+    constructor(startX,startY,nx,ny,start, owning_player_id){
+
         this.x = startX;
         this.y = startY;
+        this.startX = startX;
+        this.startY = startY;
+        this.startTime = start;
         this.vx = nx;
         this.vy = ny;
-        this.color = color;
+        this.color = players[owning_player_id].color;
         this.life = 60;
         this.r = this.life/16+1;
-        this.id = id;
+        this.id = owning_player_id;
 
     }
     update(i){
-        this.x = (((this.x+(  (this.vx*(this.life)/60)   * frameTime/2))%500)+500)%500;
-        this.y = (((this.y+(  (this.vy*(this.life)/60)  * frameTime/2))%500)+500)%500;
+        this.x = (((this.startX+(  (this.vx)   * (timeNow()-this.startTime)/(frameTime/4)))%500)+500)%500;
+        this.y = (((this.startY+(  (this.vy)  * (timeNow()-this.startTime)/(frameTime/4)))%500)+500)%500;
         this.life-=frameTime/16.666;
         this.r = this.life/16+1;
         if(this.life <= 0){
