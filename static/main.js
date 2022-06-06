@@ -78,6 +78,10 @@ socket.on("bullet_fired", (d) => {
     }
 })
 
+socket.on("hit_report", (d) => {
+    players[d[0]].hitTimer = 60;
+});
+
 var click = false
 var mouseX = 0;
 var mouseY = 0;
@@ -222,7 +226,6 @@ class Player{
         this.targetNy = 0;
         this.updateDir();
         
-        this.hit = false;
         this.hitTimer = 120;
     }
     calc(){
@@ -244,7 +247,7 @@ class Player{
     update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
-        if(this.hitTimer <= 0){
+        if(this.hitTimer <= 0 && this.id == id){
             this.getShot(i);
         }
     }
@@ -270,7 +273,8 @@ class Player{
                 continue;
             }
             if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < 20 + bullet.r){
-                this.hitTimer = 90;
+                this.hitTimer = 60;
+                socket.emit("got_hit", [id, timeNow()]);
                 return;
             }
         }
@@ -301,7 +305,7 @@ class Player{
 function shoot(){
     bullets.push(new Bullet(players[id].x, players[id].y, players[id].nx, players[id].ny, timeNow(), id));
     socket.emit("fire_bullet", [id, players[id].x, players[id].y, players[id].nx, players[id].ny, timeNow()]);
-    waitShoot = 18;
+    waitShoot = 5;
 }
 let bullets = [];
 class Bullet{
@@ -321,8 +325,8 @@ class Bullet{
 
     }
     update(i){
-        this.x = (((this.startX+(  (this.vx)   * (timeNow()-this.startTime)/(frameTime/4)))%500)+500)%500;
-        this.y = (((this.startY+(  (this.vy)  * (timeNow()-this.startTime)/(frameTime/4)))%500)+500)%500;
+        this.x = (((this.startX+(  (this.vx)*(timeNow()-this.startTime))/4  )%500)+500)%500;
+        this.y = (((this.startY+(  (this.vy)*(timeNow()-this.startTime))/4 )%500)+500)%500;
         this.life-=frameTime/16.666;
         this.r = this.life/16+1;
         if(this.life <= 0){

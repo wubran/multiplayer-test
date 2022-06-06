@@ -70,6 +70,10 @@ def heading(d):
 def bullet(d):
     emit("bullet_fired", d, broadcast = True)
 
+@socketio.on("got_hit")
+def gothit(id):
+    emit("hit_report", id, broadcast = True)
+
 
 if __name__ == '__main__':
     print("Starting...")
