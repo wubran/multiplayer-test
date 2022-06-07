@@ -26,6 +26,7 @@ socket.on('player_update', function(playerlist) {
         existingIds.push(player[0]);
         if(!players.hasOwnProperty(player[0])) {
             players[player[0]] = new Player(player[0], player[1]);
+            players[player[0]].health = player[3];
         }
         if(player[1]==playername) {
             id = player[0];
@@ -64,6 +65,9 @@ socket.on("bullet_fired", (d) => {
 
 socket.on("hit_report", (d) => {
     players[d[0]].hitTimer = 30;
+    if(d[0] != id) {
+        players[d[0]].health = d[1]
+    }
 });
 
 var click = false
@@ -246,8 +250,12 @@ class Player{
             if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < playerRadius + bullet.r){
                 bullet.life = 0;
                 this.health -= bullet.life/18 + 2;
-                if(this.health < 0){
-                    console.log("teky is die L massive bad")
+                if(this.health <= 0){
+                    socket.emit("dead", id);
+                    setTimeout(() => {
+                        window.alert("You Died!");
+                        document.location.reload();
+                    }, 1000);
                 }
                 this.health = Math.floor(this.health);
                 socket.emit("got_hit", [id, this.health, bullet.id, timeNow()]);
@@ -342,6 +350,7 @@ function fillscreen(){
     ctx.fillText(p, canvas.width - canvas.width*p.length/54 - canvas.width/40, canvas.width / 28);
 }
 
+
 oldTime = 0;
 frameIter = 1;
 
@@ -380,6 +389,7 @@ function loop(timestamp){
             shoot();
         }
     }
+
 }
 
 requestAnimationFrame(loop)

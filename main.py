@@ -57,9 +57,16 @@ def bullet(d):
 @socketio.on("got_hit")
 def gothit(id):
     emit("hit_report", id, broadcast = True)
-    for i,player in enumerate(players):
-        if player[0] == id[0]:
-            players[i][3] = id[0]
+    
+
+@socketio.on("dead")
+def dead(id):
+    for i in range(len(players)):
+        if players[i][0] == id:
+            print(f"Player Died: {players[i][1]}")
+            players.pop(i)
+            break
+    emit("player_update", players, broadcast=True)
 
 
 if __name__ == '__main__':
