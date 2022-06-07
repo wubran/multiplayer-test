@@ -150,7 +150,7 @@ socket.on("pong", (receivedTime) => {
     let up = receivedTime - (lastPingSent+timeOffset);
     let down = (now+timeOffset) - receivedTime;
     let total = now - lastPingSent;
-    ping = `U:${up}ms D:${down}ms T:${total}ms`;
+    ping = `U:${Math.round(up)}ms D:${Math.round(down)}ms T:${total}ms`;
     if(total/2 < timeOffsetPrecision) {
         timeOffsetPrecision = total/2;
         timeOffset = receivedTime - (lastPingSent + total/2);
@@ -180,8 +180,8 @@ function onRelease(event){
 }
 
 function onMouseMove(event){
-    mouseX = event.pageX-(window.innerWidth-500)/2;
-    mouseY = event.pageY-(window.innerHeight-500)/2;
+    mouseX = event.pageX;
+    mouseY = event.pageY;
 }
 
 function onMouseLeave(event){
@@ -220,8 +220,8 @@ class Player{
         }
     }
     update(i){
-        this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
-        this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
+        this.x = (this.x+(this.speedfac * this.vx * frameTime/16.666));
+        this.y = (this.y+(this.speedfac * this.vy * frameTime/16.666));
         if(this.id == id){
             this.getShot(i);
         }
@@ -320,8 +320,8 @@ class Bullet{
 
     }
     update(i){
-        this.x = (((this.startX+(  (this.vx)*(timeNow()-this.startTime))/4  )%500)+500)%500;
-        this.y = (((this.startY+(  (this.vy)*(timeNow()-this.startTime))/4 )%500)+500)%500;
+        this.x = (this.startX+(  (this.vx)*(timeNow()-this.startTime))/4);
+        this.y = (this.startY+(  (this.vy)*(timeNow()-this.startTime))/4);
         this.life-=frameTime/16.666;
         this.r = this.life/16+1;
         if(this.life <= 0){
@@ -344,10 +344,10 @@ class Bullet{
 function fillscreen(){
     ctx.fillStyle = canvascolor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = canvas.width / 30 + "px Arial";
+    ctx.font = canvas.height / 30 + "px Arial";
     ctx.fillStyle = "rgba(255, 245, 80, 1)";
     p = ping.toString();
-    ctx.fillText(p, canvas.width - canvas.width*p.length/54 - canvas.width/40, canvas.width / 28);
+    ctx.fillText(p, canvas.width - canvas.width*p.length/108, canvas.height / 28);
 }
 
 
@@ -409,8 +409,8 @@ setInterval(() => {
 
 window.onresize = canvasResize;
 function canvasResize() {
-    canvas.width  = 500;
-    canvas.height = 500;
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     ctx.fillStyle = '#13171A';
     //ctx.fillStyle = canvascolor;
