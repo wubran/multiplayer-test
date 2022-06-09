@@ -4,7 +4,6 @@ var ctx = canvas.getContext('2d');
 
 players = {}
 
-var playername = prompt("Enter your name:");
 var id;
 var waitShoot = 0;
 
@@ -12,6 +11,8 @@ var socket = io();
 
 var timeOffset = 0;
 var timeOffsetPrecision = 99999;
+
+const chatInput = document.getElementById("chatInput");
 
 
 socket.on('connect', function() {
@@ -26,6 +27,7 @@ socket.on('player_update', function(playerlist) {
         existingIds.push(player[0]);
         if(!players.hasOwnProperty(player[0])) {
             players[player[0]] = new Player(player[0], player[1]);
+            newMessage(player[1]+" has joined the game.", "yellow");
             players[player[0]].health = player[3];
         }
         if(player[1]==playername) {
@@ -34,6 +36,7 @@ socket.on('player_update', function(playerlist) {
     }
     for(let p in players) {
         if(!existingIds.includes(parseInt(p))) {
+            newMessage(players[p].name+" has left the game.", "yellow");    
             delete players[parseInt(p)];
         }
     }
@@ -70,6 +73,19 @@ socket.on("hit_report", (d) => {
     }
 });
 
+socket.on("chat_message_received", (msgdata) => {
+    
+    newMessage(msgdata.author+": "+msgdata.message, msgdata.color);
+});
+
+function newMessage(msg, color="white") {
+    let chatArea = document.getElementById("chatArea");
+    let newMessage = document.createElement("span")
+    newMessage.innerHTML = msg;
+    newMessage.style = "color:"+color;
+    chatArea.insertBefore(newMessage, chatInput);
+}
+
 var click = false
 var mouseX = 0;
 var mouseY = 0;
@@ -94,26 +110,44 @@ document.addEventListener('keydown', (event) => {
     if(keyName.length == 1){
         keyName = keyName.toLowerCase();
     }
-    if(keyList.includes(keyName) && !players[id].keysPressed[keyList.indexOf(keyName)]){
-        players[id].keysPressed[keyList.indexOf(keyName)] = true;
-        players[id].calc()
-        sendMovePacket();
-    }
-    switch(keyName){
-        case 'Control':
-            return;
-        case 'm':
-            mousemode+=1;
-            if(mousemode>2){
-                mousemode=0;
-            }
-            return;
-        case 'Escape':
-
-            return;
-        case ' ':
-            onClick();
-            return;
+    if(keyName != "Enter" && keyName != "Escape" && document.activeElement != chatInput) {
+        if(keyList.includes(keyName) && !players[id].keysPressed[keyList.indexOf(keyName)]){
+            players[id].keysPressed[keyList.indexOf(keyName)] = true;
+            players[id].calc()
+            sendMovePacket();
+        }
+        switch(keyName){
+            case 'Control':
+                return;
+            case 'm':
+                mousemode+=1;
+                if(mousemode>2){
+                    mousemode=0;
+                }
+                return;
+            case 'Escape':
+                chatInput.blur();
+                return;
+            case ' ':
+                onClick();
+                return;
+        }
+    } else if (document.activeElement == chatInput && keyName == "Enter") {
+        // console.log(document.activeElement, document.activeElement === chatInput);
+        let message = chatInput.value;
+        socket.emit("chat_message_sent", {
+            "private": false, 
+            "target":null,
+            "author": playername, 
+            "message": message,
+            "color": "white"
+        });
+        chatInput.value = "";
+        chatInput.blur();
+    } else if(keyName=="Enter") {
+        chatInput.focus();
+    } else if(keyName=="Escape") {
+        chatInput.blur();
     }
 }, false);
 
@@ -254,7 +288,7 @@ class Player{
                     socket.emit("dead", id);
                     setTimeout(() => {
                         window.alert("You Died!");
-                        document.location.reload();
+                        document.location = "/died/";
                     }, 1000);
                 }
                 this.health = Math.floor(this.health);

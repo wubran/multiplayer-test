@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <style>
+            span {
+                display:block;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="mainArea">
+            <span>{{ msg }}</span>
+            <input id="nameInput">
+            <button onclick="tryJoin();">Join</button>
+        </div>
+        <script>
+            const inp = document.getElementById("nameInput");
+
+            function tryJoin() {
+                document.location = "/game/"+inp.value;
+            }
+        </script>
+    </body>
+
+</html>

@@ -17,20 +17,46 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 playerIdIter = [0,]
 players = []
 
-@app.route('/')
-def index():
-    return render_template("index.html")
+@app.route('/game/<name>/')
+def index(name):
+    if validate_name(name):
+        return render_template("index.html", name=name)
+    else:
+        return render_template("landing.html", msg="Names must be at most 20 characters and alphanumeric.")
+
+@app.route("/died/")
+def died():
+    return render_template("landing.html", msg="You died!")
+
+@app.route("/")
+def landing():
+    return render_template("landing.html", msg="Welcome!")
 
 @socketio.on('join')
 def on_join(name):
     players.append([playerIdIter[0], name, request.sid, 100])
     playerIdIter[0] = (playerIdIter[0] + 1)%64
     print(f"Player Joined: {name}")
+    welcome_msgdata = {
+        "author": "<b>Server</b>",
+        "message": "Welcome to whatever this game is! " \
+        "<br><br>You can aim with your mouse and click or use the spacebar to shoot" \
+        "<br><br>You can move around by using WASD. <br><br>Use Enter to open the chat box",
+        "color": "magenta",
+        "private": False,
+        "target": None
+    }
+    emit("chat_message_received", welcome_msgdata)
     emit("player_update", players, broadcast=True)
 
 @socketio.on("ping")
 def pong():
     emit("pong", math.floor(time.time()*1000))
+
+@socketio.on("chat_message_sent")
+def new_msg(msgdata):
+    if not msgdata["private"]:
+        emit("chat_message_received", msgdata, broadcast = True)
 
 @socketio.on('disconnect')
 def disconnect():
@@ -64,10 +90,20 @@ def dead(id):
     for i in range(len(players)):
         if players[i][0] == id:
             print(f"Player Died: {players[i][1]}")
+            emit("chat_message_received", {
+                "author": "<b>Game</b>",
+                "message": f"{players[i][1]} died.",
+                "color": "red",
+                "private": False,
+                "target": None
+            }, broadcast=True)
             players.pop(i)
             break
+    
     emit("player_update", players, broadcast=True)
 
+def validate_name(name):
+    return len(name) < 20 and name.isalnum()
 
 if __name__ == '__main__':
     print("Starting...")

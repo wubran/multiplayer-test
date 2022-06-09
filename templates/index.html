@@ -1,19 +1,15 @@
 <!DOCTYPE html>
 <html style="padding:0;margin:0;background-color:black;">
 	<head>
-		<style>
-			.centered {
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-			}
-		</style>
+		<link rel="stylesheet" href="{{ url_for('static', filename='game/styles.css') }}">
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 	</head>
-	
+	<script>const playername = "{{ name }}";</script>
 	<body style="padding:0;margin:0;overflow: hidden;">
 		<canvas id="screen" class="centered"></canvas>
-		<script type="text/javascript" src="static/main.js"></script>
+		<div id="chatArea">
+			<input id="chatInput" title="Hit Enter to Chat">
+		</div>
+		<script type="text/javascript" src="{{ url_for('static', filename='game/main.js') }}"></script>
 	</body>
 </html>
