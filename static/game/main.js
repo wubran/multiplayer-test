@@ -67,7 +67,7 @@ socket.on("bullet_fired", (d) => {
 })
 
 socket.on("hit_report", (d) => {
-    players[d[0]].hitTimer = 30;
+    players[d[0]].hitTimer = 60;
     if(d[0] != id) {
         players[d[0]].health = d[1]
     }
@@ -223,14 +223,14 @@ function onMouseLeave(event){
 }
 let keyDirections = [[0,-1],[-1,0],[0,1],[1,0]]; //wasd
 class Player{
-    constructor(id, name, x = canvas.width/2, y = canvas.height/2){
+    constructor(myid, name, x = canvas.width/2, y = canvas.height/2){
         this.x = x;
         this.y = y;
         this.vy = 0;
         this.vx = 0;
         this.keysPressed = [false,false,false,false]; //wasd
         this.name = name;
-        this.id = id;
+        this.id = myid;
         let seed = 2*Math.PI*Math.random();
         this.color = "rgba("+(75*Math.sin(seed)+180)+","+(75*Math.sin(seed + 2*Math.PI/3)+180)+","+(75*Math.sin(seed + 4*Math.PI/3)+180);
         this.speedfac = 5;
@@ -240,7 +240,9 @@ class Player{
         this.targetNy = 0;
         this.updateDir();
         
-        this.hitTimer = 120;
+        if(myid = id){
+            this.hitTimer = 80;
+        }
         this.health = 100;
     }
     calc(){
@@ -256,9 +258,7 @@ class Player{
     update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
-        if(this.id == id){
-            this.getShot(i);
-        }
+        this.getShot(i);        
     }
     updateDir(){
         let dx = mouseX - this.x;
@@ -277,12 +277,16 @@ class Player{
         this.ny *= mult;
     }
     getShot(i){
+
         for(let bullet of bullets){
             if(bullet.id == i){
                 continue;
             }
             if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < playerRadius + bullet.r){
                 bullet.life = 0;
+                if(this.id != id){
+                    return;
+                }
                 this.health -= bullet.life/18 + 2;
                 if(this.health <= 0){
                     socket.emit("dead", id);
@@ -306,7 +310,7 @@ class Player{
         ctx.stroke();
         if(this.hitTimer > 0){
             this.hitTimer -= 4*frameTime/16.666;
-            ctx.fillStyle = "rgba(255,255,255,"+ (this.hitTimer/100) +")";
+            ctx.fillStyle = "rgba(255,255,255,"+ (this.hitTimer/80) +")";
             ctx.fill()
         }
 
