@@ -1,5 +1,5 @@
 from time import time
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, escape
 from flask_socketio import SocketIO, send, emit
 
 import json
@@ -19,10 +19,11 @@ players = []
 
 @app.route('/game/<name>/')
 def index(name):
-    if validate_name(name):
+    validated, reason = validate_name(name)
+    if validated:
         return render_template("index.html", name=name)
     else:
-        return render_template("landing.html", msg="Names must be at most 20 characters and alphanumeric.")
+        return render_template("landing.html", msg=reason)
 
 @app.route("/died/")
 def died():
@@ -55,6 +56,7 @@ def pong():
 
 @socketio.on("chat_message_sent")
 def new_msg(msgdata):
+    msgdata["message"] = escape(msgdata["message"])
     if not msgdata["private"]:
         emit("chat_message_received", msgdata, broadcast = True)
 
@@ -103,7 +105,10 @@ def dead(id):
     emit("player_update", players, broadcast=True)
 
 def validate_name(name):
-    return len(name) < 20 and name.isalnum()
+    for player in players:
+        if player[1] == name:
+            return False,"Someone already has that name."
+    return len(name) < 20 and name.isalnum(),"Names must be at most 20 characters and alphanumeric."
 
 if __name__ == '__main__':
     print("Starting...")
