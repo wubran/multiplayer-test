@@ -12,6 +12,8 @@ var socket = io();
 var timeOffset = 0;
 var timeOffsetPrecision = 99999;
 
+var zoomScale = 1;
+
 const chatInput = document.getElementById("chatInput");
 
 
@@ -214,8 +216,8 @@ function onRelease(event){
 }
 
 function onMouseMove(event){
-    mouseX = event.pageX-(window.innerWidth-500)/2;
-    mouseY = event.pageY-(window.innerHeight-500)/2;
+    mouseX = event.pageX;
+    mouseY = event.pageY;
 }
 
 function onMouseLeave(event){
@@ -256,8 +258,8 @@ class Player{
         }
     }
     update(i){
-        this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
-        this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
+        this.x = this.x+(this.speedfac * this.vx * frameTime/16.666);
+        this.y = this.y+(this.speedfac * this.vy * frameTime/16.666);
         if(this.id == id){
             this.getShot(i);
         }
@@ -300,11 +302,14 @@ class Player{
         }
     }
     draw(){
+        let drawX = (this.x-players[id].x) + canvas.width/2;
+        let drawY = (this.y-players[id].y) + canvas.height/2;
+
         ctx.lineWidth = 2;
         ctx.strokeStyle = this.color + ",1)";
         
         ctx.beginPath();
-        ctx.arc(this.x, this.y, playerRadius, 0, 2 * Math.PI);
+        ctx.arc(drawX, drawY, playerRadius, 0, 2 * Math.PI);
         ctx.stroke();
         if(this.hitTimer > 0){
             this.hitTimer -= 4*frameTime/16.666;
@@ -315,11 +320,11 @@ class Player{
         ctx.fillStyle = "rgba(255, 255, 255, 1)";
         ctx.font = Math.round(Math.min(160/this.name.length, 16)) + "px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(this.name, this.x, this.y+playerRadius+16);
+        ctx.fillText(this.name, drawX, drawY+playerRadius+16);
 
         ctx.beginPath();
-        ctx.moveTo(this.x,this.y);
-        ctx.lineTo(this.x + playerRadius*this.nx, this.y + playerRadius*this.ny);
+        ctx.moveTo(drawX,drawY);
+        ctx.lineTo(drawX + playerRadius*this.nx, drawY + playerRadius*this.ny);
         ctx.stroke();
 
         ctx.lineWidth = 6;
@@ -330,7 +335,7 @@ class Player{
         if(this.nx < 0){
             angle += Math.PI;
         }
-        ctx.arc(this.x, this.y, playerRadius+3, angle-(Math.PI*this.health/100), angle+(Math.PI*this.health/100));
+        ctx.arc(drawX, drawY, playerRadius+3, angle-(Math.PI*this.health/100), angle+(Math.PI*this.health/100));
         ctx.stroke();
     }
 }
@@ -357,8 +362,8 @@ class Bullet{
 
     }
     update(i){
-        this.x = (((this.startX+(  (this.vx)*(timeNow()-this.startTime))/4  )%500)+500)%500;
-        this.y = (((this.startY+(  (this.vy)*(timeNow()-this.startTime))/4 )%500)+500)%500;
+        this.x = this.startX+(  (this.vx)*(timeNow()-this.startTime))/4;
+        this.y = this.startY+(  (this.vy)*(timeNow()-this.startTime))/4;
         this.life-=frameTime/16.666;
         this.r = this.life/16+1;
         if(this.life <= 0){
@@ -368,19 +373,44 @@ class Bullet{
         return false;
     }
     draw(){
+        let drawX = (this.x-players[id].x) + canvas.width/2;
+        let drawY = (this.y-players[id].y) + canvas.height/2;
+
         ctx.lineWidth = 2;
         ctx.strokeStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        ctx.arc(drawX, drawY, this.r, 0, 2 * Math.PI);
         ctx.stroke();
     }
 }
 
-
+// const img = new Image();
+// img.src = "{{ url_for('assets', filename='megajoe.png') }}";
+// img.src = "../megajoe.png"
+// const pattern = ctx.createPattern(img, 'repeat');
 
 function fillscreen(){
-    ctx.fillStyle = canvascolor;
+    // ctx.fillStyle = pattern;
+    ctx.fillStyle=canvascolor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if(players.hasOwnProperty(id)){
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(50,50,50,1)";
+        ctx.beginPath();
+        for(let i = 50-players[id].x%50; i < canvas.width; i+=50){
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, canvas.height);
+
+        }
+        for(let i = 50-players[id].y%50; i < canvas.height; i+=50){
+            ctx.moveTo(0, i);
+            ctx.lineTo(canvas.width, i);
+
+        }
+        ctx.stroke();
+    }
+
     ctx.font = canvas.width / 30 + "px Arial";
     ctx.fillStyle = "rgba(255, 245, 80, 1)";
     p = ping.toString();
@@ -446,9 +476,9 @@ setInterval(() => {
 
 window.onresize = canvasResize;
 function canvasResize() {
-    canvas.width  = 500;
-    canvas.height = 500;
-
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    zoomScale = Math.min(canvas.width, canvas.height)/714
     ctx.fillStyle = '#13171A';
     //ctx.fillStyle = canvascolor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
