@@ -258,7 +258,9 @@ class Player{
     update(i){
         this.x = (((this.x+(this.speedfac * this.vx * frameTime/16.666))%500)+500)%500;
         this.y = (((this.y+(this.speedfac * this.vy * frameTime/16.666))%500)+500)%500;
-        this.getShot(i);        
+        if(this.id == id){
+            this.getShot(i);
+        }
     }
     updateDir(){
         let dx = mouseX - this.x;
@@ -277,16 +279,12 @@ class Player{
         this.ny *= mult;
     }
     getShot(i){
-
         for(let bullet of bullets){
             if(bullet.id == i){
                 continue;
             }
             if(Math.sqrt((this.x-bullet.x)*(this.x-bullet.x) + (this.y-bullet.y)*(this.y-bullet.y)) < playerRadius + bullet.r){
                 bullet.life = 0;
-                if(this.id != id){
-                    return;
-                }
                 this.health -= bullet.life/18 + 2;
                 if(this.health <= 0){
                     socket.emit("dead", id);
