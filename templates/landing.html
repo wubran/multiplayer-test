@@ -1,17 +1,15 @@
 <!DOCTYPE html>
-<html>
-
+<html class="landingPage">
     <head>
-        <style>
-            span {
-                display:block;
-            }
-        </style>
+        <link rel="stylesheet" href="../static/game/landingStyles.css">
+        <!-- <link rel="stylesheet" href="{{ url_for('static', filename='game/landingStyles.css') }}"> -->
     </head>
     <body>
-        <div id="mainArea">
+        <div class="landingColumn">
+            <h1>Gaming Title</h1>
+            <h4>from teky and bran</h4>
             <span>{{ msg }}</span>
-            <input id="nameInput">
+            <input id="nameInput" placeholder="Input username here">
             <button onclick="tryJoin();">Join</button>
         </div>
         <script>
