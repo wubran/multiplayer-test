@@ -311,8 +311,9 @@ class Player{
         }
 
         ctx.fillStyle = "rgba(255, 255, 255, 1)";
-        ctx.font = 16 + "px Arial";
-        ctx.fillText(this.name, this.x-10, this.y+32);
+        ctx.font = Math.round(Math.min(160/this.name.length, 16)) + "px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(this.name, this.x, this.y+playerRadius+16);
 
         ctx.beginPath();
         ctx.moveTo(this.x,this.y);
