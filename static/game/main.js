@@ -265,8 +265,8 @@ class Player{
         }
     }
     updateDir(){
-        let dx = mouseX - this.x;
-        let dy = mouseY - this.y;
+        let dx = mouseX - canvas.width/2;
+        let dy = mouseY - canvas.height/2;
         let mag = Math.sqrt(dx*dx + dy*dy);
         this.nx = dx/mag;
         this.ny = dy/mag;
